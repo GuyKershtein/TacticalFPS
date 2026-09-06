@@ -1,0 +1,23 @@
+// TacticalFPS surface materials.
+//
+// footstep/impact are names for Milestone 7 (bullet impacts) and Milestone
+// 12 (footstep audio) to key their effect/sound tables from later — this
+// milestone only consumes color.
+
+material concrete {
+    color ( 0.55 0.55 0.58 )
+    footstep concrete
+    impact concrete
+}
+
+material metal {
+    color ( 0.65 0.68 0.72 )
+    footstep metal
+    impact metal
+}
+
+material wood {
+    color ( 0.45 0.32 0.18 )
+    footstep wood
+    impact wood
+}

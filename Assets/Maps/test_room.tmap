@@ -1,0 +1,132 @@
+// TacticalFPS map format - "test_room"
+//
+// Original text format for this engine (not a copy of any commercial
+// engine's format). Two brush face styles, one per brush block:
+//   box ( minx miny minz ) ( maxx maxy maxz ) material
+//   plane ( x y z ) ( x y z ) ( x y z ) material   -- one line per face; use several to build a convex solid
+//
+// Units are arbitrary engine units; the player's collision hull is roughly
+// 32 units wide and 72 tall (see Engine/World/CollisionHull.h), so a room
+// with ~512-unit interior walls comfortably fits a player.
+//
+// Layout (Milestone 4): the original single room, a doorway/corridor north
+// to a second room containing a two-step staircase up to a small platform
+// (exercises the new stair-step collision), and a small wedge ramp against
+// the west wall (exercises the "plane" face syntax with a non-axis-aligned
+// brush for the first time).
+
+worldspawn
+{
+    // --- Room 1 (original room) --------------------------------------------
+    brush { box ( -272 -16 -272 ) ( 272 0 272 ) concrete }   // floor
+    brush { box ( -272 128 -272 ) ( 272 144 272 ) concrete } // ceiling
+    // North wall has a 64-unit doorway gap at x:[-32,32] leading to the corridor.
+    brush { box ( -272 0 256 ) ( -32 128 272 ) concrete }    // north wall, west segment
+    brush { box ( 32 0 256 ) ( 272 128 272 ) concrete }      // north wall, east segment
+    brush { box ( -272 0 -272 ) ( 272 128 -256 ) concrete }  // south wall
+    brush { box ( 256 0 -272 ) ( 272 128 272 ) concrete }    // east wall
+    brush { box ( -272 0 -272 ) ( -256 128 272 ) concrete }  // west wall
+    brush { box ( -16 0 -16 ) ( 16 96 16 ) metal }           // center pillar
+
+    // Small wedge ramp against the west wall: rises from y=0 at z=150 to
+    // y=32 at z=214. Point order on each face was hand-verified (via the
+    // cross-product the engine itself uses in Plane::FromPoints) to give
+    // an outward-facing normal, matching the box brushes' convention.
+    brush {
+        plane ( -250 0 150 ) ( -250 32 214 ) ( -194 0 150 ) wood  // slanted top (walkable surface)
+        plane ( -250 0 150 ) ( -194 0 150 ) ( -250 0 214 ) wood   // bottom
+        plane ( -250 0 150 ) ( -250 0 214 ) ( -250 32 214 ) wood  // left side
+        plane ( -194 0 150 ) ( -194 32 214 ) ( -194 0 214 ) wood  // right side
+        plane ( -250 0 214 ) ( -194 0 214 ) ( -250 32 214 ) wood  // back (thick end)
+    }
+
+    // --- Corridor (connects room 1's north doorway to room 2) --------------
+    brush { box ( -48 -16 272 ) ( 48 0 440 ) concrete }   // floor
+    brush { box ( -48 128 272 ) ( 48 144 440 ) concrete } // ceiling
+    brush { box ( -48 0 272 ) ( -32 128 440 ) concrete }  // west wall
+    brush { box ( 32 0 272 ) ( 48 128 440 ) concrete }    // east wall
+
+    // --- Room 2 (staircase + platform) --------------------------------------
+    brush { box ( -200 -16 440 ) ( 200 0 760 ) concrete }   // floor
+    brush { box ( -200 128 440 ) ( 200 144 760 ) concrete } // ceiling
+    // South wall has the matching 64-unit doorway gap at x:[-32,32].
+    brush { box ( -200 0 440 ) ( -32 128 456 ) concrete }   // south wall, west segment
+    brush { box ( 32 0 440 ) ( 200 128 456 ) concrete }     // south wall, east segment
+    brush { box ( -200 0 744 ) ( 200 128 760 ) concrete }   // north wall
+    brush { box ( -200 0 440 ) ( -184 128 760 ) concrete }  // west wall
+    brush { box ( 184 0 440 ) ( 200 128 760 ) concrete }    // east wall
+
+    // Two 16-unit-high steps (kStepHeight is 18 — see PlayerController.h)
+    // leading up to a 32-unit-high platform. Clearance to the 128-unit
+    // ceiling is 96 units, comfortably more than the 72-unit standing hull.
+    brush { box ( -184 0 456 ) ( -40 16 504 ) wood } // step 1
+    brush { box ( -184 0 504 ) ( -40 32 552 ) wood } // step 2
+    brush { box ( -184 0 552 ) ( -40 32 744 ) wood } // platform
+}
+
+entity
+{
+    // "origin" is a feet-level position (the player controller adds its own
+    // hull height on top of this), and "angle" is the camera yaw in degrees
+    // (0 = facing +X) — both this engine's own conventions.
+    "classname" "info_player_start"
+    "origin" "0 0 -192"
+    "angle" "90"
+    "team" "assault"
+}
+
+// Guardian spawns, in room 2 near the objective site they defend — now
+// populated by Milestone 6's bots, one per spawn.
+entity
+{
+    "classname" "info_player_start"
+    "origin" "100 0 650"
+    "angle" "270"
+    "team" "guardian"
+}
+
+entity
+{
+    "classname" "info_player_start"
+    "origin" "-100 0 500"
+    "angle" "90"
+    "team" "guardian"
+}
+
+// Bot navigation graph (Milestone 6): waypoints covering both rooms and the
+// connecting corridor. Edges are derived automatically by NavGraph from
+// line-of-sight, not authored here — see Engine/Navigation/NavGraph.h.
+entity { "classname" "nav_waypoint" "origin" "0 0 -180" }
+entity { "classname" "nav_waypoint" "origin" "150 0 -150" }
+entity { "classname" "nav_waypoint" "origin" "-150 0 -150" }
+entity { "classname" "nav_waypoint" "origin" "150 0 100" }
+entity { "classname" "nav_waypoint" "origin" "-150 0 60" }
+entity { "classname" "nav_waypoint" "origin" "0 0 200" }
+entity { "classname" "nav_waypoint" "origin" "0 0 350" }
+entity { "classname" "nav_waypoint" "origin" "0 0 470" }
+entity { "classname" "nav_waypoint" "origin" "100 0 600" }
+entity { "classname" "nav_waypoint" "origin" "-100 0 480" }
+entity { "classname" "nav_waypoint" "origin" "-100 32 650" }
+entity { "classname" "nav_waypoint" "origin" "100 0 700" }
+
+// Where Assault can plant the Demolition Charge (Milestone 5).
+entity
+{
+    "classname" "objective_site"
+    "origin" "100 0 600"
+    "radius" "100"
+    "name" "Alpha"
+}
+
+// Shootable practice targets, proving hit detection end-to-end (Milestone 3).
+entity
+{
+    "classname" "target_dummy"
+    "origin" "60 0 -60"
+}
+
+entity
+{
+    "classname" "target_dummy"
+    "origin" "-90 0 120"
+}
